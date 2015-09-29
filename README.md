@@ -1,7 +1,7 @@
 # memcached-server
 Minimal memcached server program based on libevent implementing get/set binary protocol 
 
-Steps to compile
+## Steps to compile
 1. Install libevent library
 
 sudo apt-get install libevent-dev
@@ -10,7 +10,7 @@ install from source http://libevent.org
 
 2. make
 
-Steps to run/test
+## Steps to run/test
 1. ./memcached-server 11211
   Runs the server on port listening on port 11211
 
