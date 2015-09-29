@@ -12,7 +12,7 @@ or
 
 ## Steps to run/test
 1. Runs the server on port listening on port 11211
-- ./memcached-server 11211
+ ./memcached-server 11211
 
 2. Use bmemcached library to test
-- https://github.com/jaysonsantos/python-binary-memcached
+ https://github.com/jaysonsantos/python-binary-memcached
