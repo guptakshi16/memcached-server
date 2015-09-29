@@ -16,3 +16,8 @@ or
 
 2. Use bmemcached library to test
  https://github.com/jaysonsantos/python-binary-memcached
+
+## Limitations
+* Max Key size 256 bytes
+* Max Val size 512 bytes
+* Single threaded - No locking
