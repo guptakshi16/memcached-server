@@ -16,8 +16,11 @@
 #define HASH_BITS 16
 #define HASH_MASK ((1 << HASH_BITS)-1)
 
-#define KEY_MAX_LENGTH 250
+#define KEY_MAX_LENGTH 128
+#define VAL_MAX_LENGTH 512
 
+#define WBUF_LEN 1024
+#define RBUF_LEN 1024
 
 typedef struct conn_t{
 
@@ -156,7 +159,6 @@ process_cmd_set(conn *c, struct bufferevent *bev)
 {
 	//prepare reply
 	c->wsize = sizeof(protocol_binary_response_header);
-	c->wbuf = calloc(1,sizeof(protocol_binary_response_header));
 	c->res_header = (protocol_binary_response_header*) c->wbuf;
 	c->res_header->response.status = (uint16_t)htons(PROTOCOL_BINARY_RESPONSE_SUCCESS);	
 	c->res_header->response.magic = (uint8_t)PROTOCOL_BINARY_RES;
@@ -280,7 +282,6 @@ process_cmd_get(conn *c, struct bufferevent *bev)
 		uint32_t ext_hdr = htonl(0x00000000);
 		int ext_hdr_len = sizeof(ext_hdr);
 		c->wsize = sizeof(protocol_binary_response_header)+it->datalen+ext_hdr_len;
-		c->wbuf = calloc(c->wsize,sizeof(char));
 		c->res_header = (protocol_binary_response_header*) c->wbuf;
 		c->res_header->response.status = (uint16_t)htons(0);	
 		c->res_header->response.keylen = (uint16_t)htons(0);
@@ -292,7 +293,6 @@ process_cmd_get(conn *c, struct bufferevent *bev)
 		char err[] = "NotFound";
 		int err_len = sizeof(err);
 		c->wsize = sizeof(protocol_binary_response_header)+err_len;
-		c->wbuf = calloc(c->wsize,sizeof(char));
 		c->res_header = (protocol_binary_response_header*) c->wbuf;
 		c->res_header->response.status = (uint16_t)htons(1);	
 		c->res_header->response.extlen = (uint8_t)0;
@@ -322,12 +322,6 @@ process_cmd_get(conn *c, struct bufferevent *bev)
 process_cmd(conn *c, struct bufferevent *bev)
 {
 	struct evbuffer *input = bufferevent_get_input(bev);
-	c->rbuf = (char *)malloc((size_t)c->rsize);
-	if (!c->rbuf){
-		cmd_reply_error(c,bev);
-		free_conn(c,bev);
-		return;
-	}
 
 	evbuffer_remove(input, c->rbuf, c->rsize);
 	c->req_header  = (protocol_binary_request_header*)c->rbuf;
@@ -376,9 +370,10 @@ echo_event_cb(struct bufferevent *bev, short events, void *ctx)
 	if (events & BEV_EVENT_ERROR)
 		perror("Error from bufferevent");
 	if (events & (BEV_EVENT_EOF | BEV_EVENT_ERROR)) {
-		bufferevent_free(bev);
+		//bufferevent_free(bev);
+		conn *c = (conn*) ctx;
+		free_conn(c,bev);
 	}
-	//todo : free conn
 }
 
 	static void
@@ -394,6 +389,12 @@ accept_conn_cb(struct evconnlistener *listener,
 	conn *c = calloc(1, sizeof(conn));
 	if (!c){
 		fprintf(stderr, "failed to create a new connection");
+		return;
+	}
+	c->wbuf = calloc(WBUF_LEN,sizeof(char));
+	c->rbuf = calloc(RBUF_LEN,sizeof(char));
+	if (!c->rbuf || !c->wbuf){
+		fprintf(stderr, "failed to allocate memory for read/write bufs");
 		return;
 	}
 
