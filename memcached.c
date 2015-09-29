@@ -427,7 +427,7 @@ main(int argc, char **argv)
 		port = atoi(argv[1]);
 	}
 	if (port<=0 || port>65535) {
-		fprintf(stderr,"Invalid port");
+		fprintf(stderr,"Invalid port %d",port);
 		return 1;
 	}
 
